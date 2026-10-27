@@ -28,6 +28,18 @@ def _embedder_kwargs(embedder_name: str) -> dict[str, Any]:
         dimensions = os.environ.get("REPOWISE_EMBEDDING_DIMS")
         if dimensions:
             kwargs["output_dimensionality"] = int(dimensions)
+    elif embedder_name == "openai":
+        # Allow embeddings to point at a different OpenAI-compatible endpoint
+        # than the LLM (e.g., a local infinity-embed container).
+        base_url = os.environ.get("OPENAI_EMBEDDING_BASE_URL")
+        if base_url:
+            kwargs["base_url"] = base_url
+        dimensions = os.environ.get("REPOWISE_EMBEDDING_DIMS")
+        if dimensions:
+            kwargs["dimensions"] = int(dimensions)
+        timeout = os.environ.get("REPOWISE_EMBEDDING_TIMEOUT")
+        if timeout:
+            kwargs["timeout"] = float(timeout)
     if model:
         kwargs["model"] = model
     return kwargs
@@ -109,8 +121,8 @@ def resolve_embedder_for_repo(repo_path: Any) -> str:
 
     Precedence matches :func:`resolve_embedder` and what ``serve`` already
     does, so the same repo in the same shell never resolves two different ways:
-    an explicitly set ``REPOWISE_EMBEDDER`` wins (it is the documented escape
-    hatch after a manual re-embed), then the pin, then env detection.
+    an explicitly set ``REPOWISE_EMBEDDER`` wins (the documented escape hatch
+    after a manual re-embed), then the pin, then env detection.
     """
     from pathlib import Path
 

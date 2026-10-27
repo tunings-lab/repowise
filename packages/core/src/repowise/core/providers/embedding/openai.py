@@ -36,6 +36,8 @@ class OpenAIEmbedder:
         api_key: OpenAI API key. Falls back to OPENAI_API_KEY env var.
         model:   Embedding model name. Default: "text-embedding-3-small".
         base_url: Optional custom base URL for OpenAI-compatible endpoints.
+        dimensions: Optional explicit output dimensionality. Falls back to the
+            known mapping, then to 1536.
     """
 
     _DIMS: dict[str, int] = {
@@ -53,6 +55,7 @@ class OpenAIEmbedder:
         model: str = "text-embedding-3-small",
         timeout: float = _DEFAULT_TIMEOUT,
         base_url: str | None = None,
+        dimensions: int | None = None,
     ) -> None:
         self._api_key = api_key or os.environ.get("OPENAI_API_KEY")
         if not self._api_key:
@@ -63,9 +66,12 @@ class OpenAIEmbedder:
         self._model = model
         self._timeout = timeout
         self._client: object | None = None  # cached; created once on first embed()
+        self._explicit_dimensions = dimensions
 
     @property
     def dimensions(self) -> int:
+        if self._explicit_dimensions is not None:
+            return self._explicit_dimensions
         return self._DIMS.get(self._model, 1536)
 
     async def embed(self, texts: list[str]) -> list[list[float]]:
